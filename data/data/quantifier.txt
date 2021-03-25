@@ -1,0 +1,4 @@
+(candidates (forall ((y S) (z Int)) (or (and (not (= a y)) (not (= b y))) (not (>= z 0)) (>= z 3) (= sk2 y) (not (= sk3 (mod (+ 1 z) 3))) (>= (+ z (cast y)) 6)))
+(variable 0 (candidate a (age 0) (phase 0) (relevant 1) (depth 0) (tried 0)) (candidate b (age 1) (phase 0) (relevant 1) (depth 0) (tried 0)))
+(variable 1 (candidate 0 (age 0) (phase 0) (relevant 1) (depth 0) (tried 0)) (candidate 4 (age 1) (phase 0) (relevant 1) (depth 0) (tried 0)))
+)

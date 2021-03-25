@@ -30,7 +30,7 @@ def get_parsed_format(quantifier,log):
     declarations = ""
     for l in log:
         if l.startswith('(declare-fun') or l.startswith('(declare-constant') or l.startswith('(declare-sort'):
-            declarations += l
+            declarations += l+"\n"
 
     candidates = parse(quantifier)[0]
 
@@ -132,10 +132,10 @@ class CustomSmtPrinter(TreeWalker):
             try:
                 child = next(f)
                 sym = op.op_to_str(stack[-1].gi_frame.f_locals['s'].node_type())
-                if str(child)=='__div':
-                    sym =  'div'
-                if str(child)=='__mod':
-                    sym =  'mod'                    
+                #if str(child)=='__div':
+                #    sym =  'div'
+                #if str(child)=='__mod':
+                #    sym =  'mod'                    
                 self.unique_symbols.add(sym)
 
                 edge_list.append((stack[-1].gi_frame.f_locals['formula']._node_id, stack[-1].gi_frame.f_locals['s']._node_id))

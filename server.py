@@ -1,10 +1,11 @@
 
 from featurizer import *
 import joblib
+from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
 
 model = joblib.load('models/lgb.pkl')
 
-
+dec = ''
 
 import socketserver
 
@@ -16,30 +17,33 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     override the handle() method to implement communication to the
     client.
     """
-
     def handle(self):
         # self.request is the TCP socket connected to the client
+        global dec
         BUFF_SIZE = 1024
         data = b""
-        
         while True:
             part = self.request.recv(BUFF_SIZE)
             data += part
             if len(part) < BUFF_SIZE:
                 break
-        ix = data.index(b"#")
-        data =  data[ix+1:]
-        #message = json.loads(data.decode())
+        data = data.decode()
+        ix = data.index("#")
+        message_type = data[ix+1] # a = declaration, b = quantifier, E=shutdown
+        data =  data[ix+2:]
+        if message_type=='a':
+            data = data.split("\n")
+            dec = data
+            self.request.sendall(b'2#ok')
+            return
+        elif message_type=='b':
+            quantifier = data
+        elif message_type=='E':
+            self.server._BaseServer__shutdown_request = True
+            self.request.sendall(b'7#exiting')
+            return
 
-        #print(f"Received {message!r}")
-
-        with open('data/declarations.log','r') as f:
-            log = f.readlines()
-
-        with open('data/quantifier.txt','r') as f:
-            quantifier = f.read()
-        
-        extracted_data_per_formula,var_term_counts = get_parsed_format(quantifier,log)
+        extracted_data_per_formula,var_term_counts = get_parsed_format(quantifier,dec)
         split_ixs = []
         ix = 0
         for i in var_term_counts[:-1]:
