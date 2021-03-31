@@ -34,8 +34,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         message_type = data[ix+1] # a = declaration, b = quantifier, E=shutdown
         data =  data[ix+2:]
         if message_type=='a':
-            with open('data/data/declarations.log', 'r') as f:
-                data = f.read()
+            #with open('data/data/declarations.log', 'r') as f:
+            #    data = f.read()
             dec = data.split("\n")
             pysmt.environment.reset_env()
             parser = SmtLibParser(interactive=True)
@@ -44,11 +44,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             return
         elif message_type=='b':
             quantifier = data
-            with open('data/data/quantifier.txt', 'r') as f:
-                quantifier = f.read()
+            #with open('data/data/quantifier.txt', 'r') as f:
+            #    quantifier = f.read()
         elif message_type=='c':
-            with open('data/data/dec2.txt', 'r') as f:
-                data = f.read()
+            #with open('data/data/dec2.txt', 'r') as f:
+            #    data = f.read()
             dec = data.split("\n")
             parsed = get_script(parser, get_dec(dec))
             self.request.sendall(b'2#ok')
