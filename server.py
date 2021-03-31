@@ -2,11 +2,11 @@
 from featurizer import *
 import joblib
 from pysmt.smtlib.printers import SmtPrinter, SmtDagPrinter
+from pysmt.smtlib.parser import SmtLibParser,SmtLibExecutionCache
 
 model = joblib.load('models/lgb.pkl')
 
-dec = ''
-
+parser = SmtLibParser(interactive=True)
 import socketserver
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
@@ -19,7 +19,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     """
     def handle(self):
         # self.request is the TCP socket connected to the client
+        global parser
         global dec
+        global env
         BUFF_SIZE = 1024
         data = b""
         while True:
@@ -32,18 +34,30 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         message_type = data[ix+1] # a = declaration, b = quantifier, E=shutdown
         data =  data[ix+2:]
         if message_type=='a':
-            data = data.split("\n")
-            dec = data
+            with open('data/data/declarations.log', 'r') as f:
+                data = f.read()
+            dec = data.split("\n")
+            pysmt.environment.reset_env()
+            parser = SmtLibParser(interactive=True)
+            parsed = parser.get_script(get_dec(dec))
             self.request.sendall(b'2#ok')
             return
         elif message_type=='b':
             quantifier = data
+            with open('data/data/quantifier.txt', 'r') as f:
+                quantifier = f.read()
+        elif message_type=='c':
+            with open('data/data/dec2.txt', 'r') as f:
+                data = f.read()
+            dec = data.split("\n")
+            parsed = get_script(parser, get_dec(dec))
+            self.request.sendall(b'2#ok')
+            return
         elif message_type=='E':
             self.server._BaseServer__shutdown_request = True
             self.request.sendall(b'7#exiting')
             return
-
-        extracted_data_per_formula,var_term_counts = get_parsed_format(quantifier,dec)
+        extracted_data_per_formula,var_term_counts = get_parsed_format(parser,quantifier)
         split_ixs = []
         ix = 0
         for i in var_term_counts[:-1]:
@@ -55,7 +69,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         output_split = [list(i) for i in np.split(output,split_ixs)]
         output_b = str.encode(str(output_split).replace(",",""))
         out_data =  bytes(str(len(output_b)),'utf-8') + b'#'+ output_b
-
         self.request.sendall(out_data)
 
 if __name__ == "__main__":

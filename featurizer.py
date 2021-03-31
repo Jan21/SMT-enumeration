@@ -1,4 +1,4 @@
-from pysmt.smtlib.parser import SmtLibParser
+from pysmt.smtlib.parser import SmtLibParser,get_formula,Tokenizer
 import pysmt
 import os
 from functools import partial
@@ -9,37 +9,53 @@ from pysmt.environment import get_env
 from pysmt.walkers import TreeWalker, DagWalker, handles
 from pysmt.utils import quote
 import pysmt.operators as op
-
+import pysmt.smtlib.commands as smtcmd
 import json
 import struct
 import numpy as np
 from read_file import *
 from other_parser import parse
 from collections import Counter
+from pysmt.smtlib.script import SmtLibCommand, SmtLibScript
+import copy
 
-def get_graph_rep(toparse):
-    parser = SmtLibParser()
-    parsed = parser.get_script(cStringIO(toparse))
-    f = parsed.get_strict_formula()
+def get_script(parser,script):
+    res = SmtLibScript()
+    for cmd in parser.get_command_generator(script):
+        res.add_command(cmd)
+    res.annotations = parser.cache.annotations
+    return res
+
+def get_graph_rep(parser,toparse):
+    toparse = cStringIO(toparse)
+    exp = parser.get_expression(Tokenizer(toparse))
+    cmd = SmtLibCommand(smtcmd.ASSERT, [exp])
+    res = SmtLibScript()
+    res.add_command(cmd)
+    chcksat = SmtLibCommand(smtcmd.CHECK_SAT,[])
+    res.add_command(chcksat)
+    f = res.get_strict_formula()
     c = cStringIO()
     pr = CustomSmtPrinter(c)
     e, n = pr.walk(f)
     return e,n
 
-def get_parsed_format(quantifier,log):
+def get_dec(log):
     declarations = ""
     for l in log:
         if l.startswith('(declare-fun') or l.startswith('(declare-constant') or l.startswith('(declare-sort'):
             declarations += l+"\n"
 
-    candidates = parse(quantifier)[0]
+    div_mod_declarations = '(declare-fun __div (Int Int) Int)\n (declare-fun __mod (Int Int) Int)\n'
+    toparse = cStringIO(declarations + div_mod_declarations)
+    return toparse
 
-    pysmt.environment.reset_env()
-    formula_str = print_str(candidates[1])
-    formula = f"(assert {formula_str})\n (check-sat)\n"
-    div_mod_declarations = '(declare-fun __div (Int Int) Int)\n (declare-fun __mod (Int Int) Int)\n'        
-    toparse = declarations + div_mod_declarations + formula
-    e,n = get_graph_rep(toparse)
+
+def get_parsed_format(parser,quantifier):
+    candidates = parse(quantifier)[0]
+    #pysmt.environment.reset_env()
+    quantifier_str = print_str(candidates[1])
+    e,n = get_graph_rep(parser,quantifier_str)
     extracted_data_per_formula = {"formula_graph":{'edges':e,'nodes_dic':n},'terms':[]}
     var_term_count = []
     for var in candidates[2:]:
@@ -50,9 +66,8 @@ def get_parsed_format(quantifier,log):
             if var == ('null',):
                 continue
             var_str = print_str(var)
-            term = f"(assert ( = {var_str} {var_str}))\n (check-sat)\n"
-            toparse = declarations + term
-            e, n = get_graph_rep(toparse)            
+            term = f"( = {var_str} {var_str})"
+            e, n = get_graph_rep(parser,term)
             extracted_data_per_formula['terms'].append({"base":base_features,'edges':e,'nodes_dic':n})
             term_count += 1
         var_term_count.append(term_count)
@@ -62,7 +77,7 @@ def get_parsed_format(quantifier,log):
 
 
 def get_bow(cntr):
-    unique_symbols_bow = list({'PLUS', 'FUNCTION', 'OR', 'ITE', 'SYMBOL', 'TIMES', 'IFF', 'LE', 'INT_CONSTANT', 'EQUALS', 'AND', 'FORALL', 'NOT'})
+    unique_symbols_bow = ['PLUS', 'FUNCTION', 'OR', 'ITE', 'SYMBOL', 'TIMES', 'IFF', 'LE', 'INT_CONSTANT', 'EQUALS', 'AND', 'FORALL', 'NOT','div','mod']
     bow_len = len(unique_symbols_bow)
     bow = np.zeros(bow_len)
     for k,v in cntr.items():
@@ -132,10 +147,10 @@ class CustomSmtPrinter(TreeWalker):
             try:
                 child = next(f)
                 sym = op.op_to_str(stack[-1].gi_frame.f_locals['s'].node_type())
-                #if str(child)=='__div':
-                #    sym =  'div'
-                #if str(child)=='__mod':
-                #    sym =  'mod'                    
+                if str(child)[:5]=='__div':
+                    sym =  'div'
+                if str(child)[:5]=='__mod':
+                    sym =  'mod'
                 self.unique_symbols.add(sym)
 
                 edge_list.append((stack[-1].gi_frame.f_locals['formula']._node_id, stack[-1].gi_frame.f_locals['s']._node_id))

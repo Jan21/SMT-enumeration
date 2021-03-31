@@ -1,0 +1,4 @@
+(declare-fun a () S)
+(declare-fun b () S)
+(declare-fun cast (S) Int)
+(declare-fun __z () Real)
