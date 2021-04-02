@@ -66,8 +66,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             split_ixs.append(ix)
 
         feature_vectors = get_feature_vectors(extracted_data_per_formula)
-        output = model.predict(feature_vectors)
-        output_split = [list(i) for i in np.split(output,split_ixs)]
+        if feature_vectors == None:
+            output_split = [[] for i in range(len(split_ixs)+1)]
+        else:
+            output = model.predict(feature_vectors)
+            output_split = [list(i) for i in np.split(output,split_ixs)]
         output_b = str.encode(str(output_split).replace(",",""))
         out_data =  bytes(str(len(output_b)),'utf-8') + b'#'+ output_b
         self.request.sendall(out_data)
