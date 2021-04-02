@@ -59,25 +59,17 @@ def get_parsed_format(quantifier,log):
     sorts = ""
     for l in log:
         if l.startswith('(declare-fun') or l.startswith('(declare-constant'):
-            declarations += l+"\n"
+            declarations += l
         if l.startswith('(declare-sort'):
             sorts += l
-    candidates = parse(quantifier)[0]
     parser = SmtLibParser(interactive=True)
-    pysmt.environment.reset_env()
-    formula_str = print_str(candidates[1])
+    formula_str = quantifier
     formula = cStringIO(f"{formula_str}")
     div_mod_declarations = '(declare-fun __div (Int Int) Int)\n (declare-fun __mod (Int Int) Int)\n'
-    toparse = sorts + declarations + div_mod_declarations #+ formula
-    cache = SmtLibExecutionCache()
-    env = pysmt.environment.get_env()
-    cache,env = get_decl(parser,toparse,cache,env)
-    #parser = SmtLibParser(environment=env)
-    #parser.cache = copy.deepcopy(cache)
-    exp = parser.get_expression(Tokenizer(formula))
-    cmd = SmtLibCommand(smtcmd.ASSERT, [exp])
-    res = SmtLibScript()
-    res.add_command(cmd)
+    toparse = sorts + declarations + div_mod_declarations + formula_str + "(check-sat)"
+    toparse = formula_str
+    parser = SmtLibParser()
+    res = parser.get_script(cStringIO(toparse))
     f = res.get_strict_formula()
     c = cStringIO()
     pr = CustomSmtPrinter(c)
@@ -116,7 +108,7 @@ def get_parsed_format(quantifier,log):
 with open('data/dec_problem.txt','r') as f:
     log = f.readlines()
 
-with open('data/assert_problem.txt','r') as f:
+with open('data/pokus8.smt2','r') as f:
     quantifier = f.read()
 
 extracted_data_per_formula,var_term_counts = get_parsed_format(quantifier,log)
