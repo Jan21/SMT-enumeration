@@ -65,7 +65,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             split_ixs.append(ix)
 
         feature_vectors = get_feature_vectors(extracted_data_per_formula)
-        if feature_vectors == None:
+        if len(feature_vectors) == 0:
             output_split = [[] for i in range(len(split_ixs)+1)]
         else:
             output = model.predict(feature_vectors)

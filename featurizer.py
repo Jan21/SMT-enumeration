@@ -105,7 +105,7 @@ def get_feature_vectors(extracted_data_per_formula):
         final_feature = np.concatenate([formula_bow,term_bow,base_features])
         feature_vectors.append(final_feature)
     if len(feature_vectors) == 0:
-        return None
+        return []
     feature_vectors_np = np.stack(feature_vectors,axis=0)
     return feature_vectors_np
 
