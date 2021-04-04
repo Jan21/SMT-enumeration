@@ -34,7 +34,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         message_type = data[ix+1] # a = declaration, b = quantifier, E=shutdown
         data =  data[ix+2:]
         if message_type=='a':
-            #with open('data/data/declarations.log', 'r') as f:
+            #with open('data/decerr.txt', 'r') as f:
             #    data = f.read()
             dec = data.split("\n")
             pysmt.environment.reset_env()
@@ -44,7 +44,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             return
         elif message_type=='b':
             quantifier = data
-            #with open('data/data/quantifier.txt', 'r') as f:
+            #with open('data/formerr.txt', 'r') as f:
             #    quantifier = f.read()
         elif message_type=='c':
             #with open('data/data/dec2.txt', 'r') as f:

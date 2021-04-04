@@ -56,6 +56,7 @@ def get_graph_rep(parser,toparse):
 
 def get_parsed_format(quantifier,log):
     declarations = ""
+    candidates = parse(quantifier)[0]
     sorts = ""
     for l in log:
         if l.startswith('(declare-fun') or l.startswith('(declare-constant'):
@@ -105,10 +106,10 @@ def get_parsed_format(quantifier,log):
     return extracted_data_per_formula,var_term_count
 
 
-with open('data/dec_problem.txt','r') as f:
+with open('data/decerr.txt','r') as f:
     log = f.readlines()
 
-with open('data/pokus8.smt2','r') as f:
+with open('data/formerr.txt','r') as f:
     quantifier = f.read()
 
 extracted_data_per_formula,var_term_counts = get_parsed_format(quantifier,log)

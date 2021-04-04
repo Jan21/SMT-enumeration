@@ -2,7 +2,7 @@
 
 from string import whitespace
 
-atom_end = set('()"\'') | set(whitespace)
+atom_end = set('()') | set(whitespace)
 
 def parse(sexp):
     stack, i, length = [[]], 0, len(sexp)
@@ -15,16 +15,16 @@ def parse(sexp):
             if   c == '(': stack.append([])
             elif c == ')':
                 stack[-2].append(stack.pop())
-                if stack[-1][0] == ('quote',): stack[-2].append(stack.pop())
-            elif c == '"': stack.append('')
-            elif c == "'": stack.append([('quote',)])
+                #if stack[-1][0] == ('quote',): stack[-2].append(stack.pop())
+            #elif c == '"': stack.append('')
+            #elif c == "'": stack.append([('quote',)])
             elif c in whitespace: pass
             else: stack.append((c,))
         elif reading == str:
-            if   c == '"':
-                stack[-2].append(stack.pop())
-                if stack[-1][0] == ('quote',): stack[-2].append(stack.pop())
-            elif c == '\\':
+            #if   c == '"':
+            #    stack[-2].append(stack.pop())
+            #    if stack[-1][0] == ('quote',): stack[-2].append(stack.pop())
+            if c == '\\':
                 i += 1
                 stack[-1] += sexp[i]
             else: stack[-1] += c
@@ -33,7 +33,7 @@ def parse(sexp):
                 atom = stack.pop()
                 if atom[0][0].isdigit(): stack[-1].append(eval(atom[0]))
                 else: stack[-1].append(atom)
-                if stack[-1][0] == ('quote',): stack[-2].append(stack.pop())
+                #if stack[-1][0] == ('quote',): stack[-2].append(stack.pop())
                 continue
             else: stack[-1] = ((stack[-1][0] + c),)
         i += 1
