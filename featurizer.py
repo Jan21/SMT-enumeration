@@ -46,7 +46,7 @@ def get_dec(log):
         if l.startswith('(declare-fun') or l.startswith('(declare-constant') or l.startswith('(declare-sort'):
             declarations += l+"\n"
 
-    div_mod_declarations = '(declare-fun __div (Int Int) Int)\n (declare-fun __mod (Int Int) Int)\n'
+    div_mod_declarations = '(declare-fun div (Int Int) Int)\n (declare-fun mod (Int Int) Int)\n'
     toparse = cStringIO(declarations + div_mod_declarations)
     return toparse
 
@@ -149,13 +149,15 @@ class CustomSmtPrinter(TreeWalker):
             try:
                 child = next(f)
                 sym = op.op_to_str(stack[-1].gi_frame.f_locals['s'].node_type())
-                if str(child)[:5]=='__div':
-                    sym =  'div'
-                if str(child)[:5]=='__mod':
-                    sym =  'mod'
+                if op.op_to_str(child.node_type()) == 'FUNCTION':
+                    fnam = child._content.payload._content.payload[0]
+                    if fnam =='div':
+                        sym =  'div'
+                    if fnam =='mod':
+                        sym =  'mod'
                 self.unique_symbols.add(sym)
 
-                edge_list.append((stack[-1].gi_frame.f_locals['formula']._node_id, stack[-1].gi_frame.f_locals['s']._node_id))
+                #edge_list.append((stack[-1].gi_frame.f_locals['formula']._node_id, stack[-1].gi_frame.f_locals['s']._node_id))
                 nodes[stack[-1].gi_frame.f_locals['s']._node_id] = sym
                 if threshold and len(stack) >= threshold:
                     iterator = self.walk_threshold(child)
@@ -417,10 +419,6 @@ def print_str(parts,to_append = ""):
         to_append += str(parts)+" "
     elif (len(parts)==1 and type(parts[0]) is str):
         parts = parts[0]
-        if parts == 'div':
-            parts = '__div'
-        if parts == 'mod':
-            parts = '__mod'
         to_append += str(parts)+" "
     else:
         print(parts)
